@@ -12,7 +12,63 @@
 		<meta name="keywords" content="Visa application in Czech Republic, foreigners in Czech Republic, Open data" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" type="text/css" href="style.css">
+		
+		<?php
+if(isset($_POST['submit'])) {
+$receiptnum1 = $_POST['receipt1'];
+$receiptnum2 = $_POST['receipt2'];
+$receiptnum3 = $_POST['receipt3'];
+$receiptnum = "OAM-".$receiptnum1."/".$receiptnum2."-".$receiptnum3;
+
+date_default_timezone_set('Europe/Prague');
+include 'Classes/PHPExcel/IOFactory.php';
+$inputFileName = 'Prehled_k_21-11-2016.xlsx';  // Reading the Excel file
+
+try{
+//Using try-catch blocks to prevent unexpected errors 
+    $inputFileType = PHPExcel_IOFactory::identify($inputFileName);
+    $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+    $objPHPExcel = $objReader->load($inputFileName);
+} catch (Exception $e) {
+    die('Error loading file"' . pathinfo($inputFileName, PATHINFO_BASENAME). '": ' . $e->getMessage());
+}
+
+
+
+function boolApplication($receiptNumber,$objPHPExcel){
+$result = false;
+$sheetCount = $objPHPExcel->getSheetCount();
+//loop trough sheet 1, sheet 2 and sheet 3;
+for($sheeN=0; $sheeN <=$sheetCount-1; $sheeN++){
+$sheet = $objPHPExcel->getSheet($sheeN);
+$highestRow = $sheet->getHighestRow();
+
+//  Loop through each row of the worksheet in turn
+for ($row = 7; $row <= $highestRow; $row++) {
+    $actuallValue = trim(utf8_decode($sheet->getCell('B'.$row )->getValue())," \t\n\r\0\x0B\xA0");
+	if($actuallValue==$receiptNumber) $result = true;
+}  
+}
+return $result;
+}
+
+echo "<script type='text/javascript'>\n";
+if(($receiptnum2 || $receiptnum3) == "NULL")
+	echo "var testVar = \" The receipt number you have entered is NOT invalid. Try it again.\";\n";
+
+if((boolApplication($receiptnum,$objPHPExcel))== true) 
+	echo "var testVar = \"Your receipt number: $receiptnum is READY! Contact to Immigration \";\n";
+else
+	echo "var testVar = \"Your receipt number: $receiptnum is NOT ready, verify if your entered number was correct  \";\n";
+echo "window.alert(testVar)";
+echo "</script>";	
+	
+
+
+}
+?>
     </head>
+
     <body>
         <header>
             <h1>Information for foreigners</h1>
@@ -22,9 +78,12 @@
             <div class="col-3 col-m-3 menu">
                     <ul>
                         <li><a href="CZ-visa.php">DESKTOP Version</a></li>
+						
+						
                     </ul>
             </div>
-  
+		   
+		   
         <div class="col-6 col-m-9">
                         <p>Example: If receipt number of your application is <b>OAM-1234-5/PP-2014</b> You just have to fill the EMPTY Field "<b>1234-5</b>" then choose your type of application and year.
 						<p> List Valid to the <b>21st November 2016</b>
